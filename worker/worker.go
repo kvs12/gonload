@@ -78,18 +78,14 @@ func main() {
 }
 
 func (w *worker) start() {
-	res, err := http.Get(fmt.Sprintf("%s", w.URL))
+	res, err := http.Get(w.URL.String())
 	if err != nil {
 		w.statCh <- stat{
 			err: err,
 		}
 		return
 	}
-	defer func() {
-		if err := res.Body.Close(); err != nil {
-			fmt.Printf("Error on close: %v", err)
-		}
-	}()
+	defer res.Body.Close()
 	name := path.Base(w.URL.Path)
 	filePath := filepath.Join(w.outDir, name)
 	fmt.Printf("Downloading %v\n", filePath)
@@ -114,13 +110,10 @@ func readToFile(
 	if err != nil {
 		return 0, fmt.Errorf("error creating file: %v\n", err)
 	}
+	defer f.Close()
 	n, err := io.Copy(f, reader)
 	if err != nil {
 		return 0, fmt.Errorf("error while copying data: %v", err)
-	}
-	err = f.Close()
-	if err != nil {
-		return n, fmt.Errorf("error closing the file: %v\n", err)
 	}
 	return n, nil
 }
